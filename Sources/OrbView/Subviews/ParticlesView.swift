@@ -13,6 +13,7 @@ class ParticleScene: SKScene {
     let sizeRange: ClosedRange<CGFloat>
     let particleCount: Int
     let opacityRange: ClosedRange<Double>
+    let erraticness: Double  // 0 to 1, how random/erratic the movement is
     
     init(
         size: CGSize,
@@ -20,13 +21,15 @@ class ParticleScene: SKScene {
         speedRange: ClosedRange<Double>,
         sizeRange: ClosedRange<CGFloat>,
         particleCount: Int,
-        opacityRange: ClosedRange<Double>
+        opacityRange: ClosedRange<Double>,
+        erraticness: Double = 0.3
     ) {
         self.color = color
         self.speedRange = speedRange
         self.sizeRange = sizeRange
         self.particleCount = particleCount
         self.opacityRange = opacityRange
+        self.erraticness = erraticness
         super.init(size: size)
         
         backgroundColor = .clear
@@ -48,9 +51,11 @@ class ParticleScene: SKScene {
         emitter.particleColor = color
         emitter.particleColorBlendFactor = 1.0
         
-        // Basic emitter properties
-        emitter.particleSpeed = CGFloat(speedRange.lowerBound)
-        emitter.particleSpeedRange = CGFloat(speedRange.upperBound - speedRange.lowerBound)
+        // Basic emitter properties - speed increases with erraticness
+        let baseSpeed = CGFloat(speedRange.lowerBound)
+        let speedBoost = CGFloat(erraticness) * 30
+        emitter.particleSpeed = baseSpeed + speedBoost
+        emitter.particleSpeedRange = CGFloat(speedRange.upperBound - speedRange.lowerBound) * (1 + CGFloat(erraticness))
         emitter.particleScale = sizeRange.lowerBound
         emitter.particleScaleRange = sizeRange.upperBound - sizeRange.lowerBound
         
@@ -89,23 +94,30 @@ class ParticleScene: SKScene {
         
         emitter.particleBlendMode = .add
         
-        // Center the emitter and set emission area to full size
+        // Particles spawn from ALL over the orb area
         emitter.position = CGPoint(x: size.width/2, y: size.height/2)
-        emitter.particlePositionRange = CGVector(dx: size.width, dy: size.height)
+        emitter.particlePositionRange = CGVector(dx: size.width * 0.9, dy: size.height * 0.9)
         
         // Particle birth and lifetime
         emitter.particleBirthRate = CGFloat(particleCount) / 2.0
         emitter.numParticlesToEmit = 0
-        emitter.particleLifetime = 2.0
-        emitter.particleLifetimeRange = 1.0
+        emitter.particleLifetime = 2.5
+        emitter.particleLifetimeRange = 1.5
         
-        // Update movement properties
-        emitter.emissionAngle = CGFloat.pi / 2  // Point upwards (90 degrees)
-        emitter.emissionAngleRange = CGFloat.pi / 6  // Allow 30 degree variation each way
+        // FULL 360 degree emission - particles go in ALL directions
+        emitter.emissionAngle = 0  // Doesn't matter when range is full circle
+        emitter.emissionAngleRange = CGFloat.pi * 2  // Full 360 degrees always
         
-        // Add some sideways drift
-        emitter.xAcceleration = 0  // No horizontal acceleration
-        emitter.yAcceleration = 20 // Slight upward acceleration
+        // Random acceleration for chaotic movement
+        // Higher erraticness = stronger random forces
+        let accelStrength = 10 + CGFloat(erraticness) * 50
+        emitter.xAcceleration = CGFloat.random(in: -accelStrength...accelStrength)
+        emitter.yAcceleration = CGFloat.random(in: -accelStrength...accelStrength)
+        
+        // Add rotation for more visual interest
+        emitter.particleRotation = 0
+        emitter.particleRotationRange = CGFloat.pi * 2
+        emitter.particleRotationSpeed = CGFloat.random(in: -2...2) * CGFloat(erraticness + 0.3)
         
         addChild(emitter)
     }
@@ -131,6 +143,7 @@ struct ParticlesView: View {
     let sizeRange: ClosedRange<CGFloat>
     let particleCount: Int
     let opacityRange: ClosedRange<Double>
+    var erraticness: Double = 0.3
     
     var scene: SKScene {
         let scene = ParticleScene(
@@ -139,7 +152,8 @@ struct ParticlesView: View {
             speedRange: speedRange,
             sizeRange: sizeRange,
             particleCount: particleCount,
-            opacityRange: opacityRange
+            opacityRange: opacityRange,
+            erraticness: erraticness
         )
         scene.scaleMode = .aspectFit
         return scene

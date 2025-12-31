@@ -56,16 +56,18 @@ public struct OrbView: View {
             .modifier(
                 RealisticShadowModifier(
                     colors: config.showShadow ? config.backgroundColors : [.clear],
-                    radius: size * 0.08
+                    radius: size * 0.08,
+                    spread: config.haloSpread
                 )
             )
         }
     }
 
     private var background: some View {
-        LinearGradient(colors: config.backgroundColors,
-                       startPoint: .bottom,
-                       endPoint: .top)
+        AnimatedGradientView(
+            colors: config.backgroundColors,
+            speed: config.speed
+        )
     }
 
     private var orbOutlineColor: LinearGradient {
@@ -82,7 +84,8 @@ public struct OrbView: View {
                 speedRange: 10...20,
                 sizeRange: 0.5...1,
                 particleCount: 10,
-                opacityRange: 0...0.3
+                opacityRange: 0...0.3,
+                erraticness: config.particleErraticness
             )
             .blur(radius: 1)
             
@@ -91,7 +94,8 @@ public struct OrbView: View {
                 speedRange: 20...30,
                 sizeRange: 0.2...1,
                 particleCount: 10,
-                opacityRange: 0.3...0.8
+                opacityRange: 0.3...0.8,
+                erraticness: config.particleErraticness
             )
         }
         .blendMode(.plusLighter)
